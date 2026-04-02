@@ -80,7 +80,7 @@ doctype_list_js = {"Payment Order" : "public/js/payment_order_list.js"}
 # app_include_icons = "india_banking/public/icons.svg"
 
 # Home Pages
-# ----------
+# --------
 
 # application home page (will override Website Settings)
 # home_page = "login"
