@@ -9,7 +9,10 @@ from frappe.model.document import Document
 
 class PaymentType(Document):
 	def autoname(self):
-		self.name = get_autoname_with_number("", self.payment_type, self.company)
+		if self.company:
+			self.name = get_autoname_with_number("", self.payment_type, self.company)
+		else:
+			self.name = self.payment_type
 
 	def on_update(self):
 		if self.is_default:
