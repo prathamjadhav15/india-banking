@@ -146,18 +146,19 @@ class BankPaymentRequest(PaymentRequest):
 
 @frappe.whitelist()
 def validate_payment_request_status(**args):
-	total_bank_payment_request_amount = frappe.db.get_all(
+	bank_payment_requests = frappe.db.get_all(
 		"Bank Payment Request", {
 			"reference_doctype": args.get('ref_doctype'),
 			"reference_name": args.get('ref_name'),
 			"docstatus": 1
 		},
-		"sum(grand_total) as grand_total")
+		"grand_total")
 
-	if total_bank_payment_request_amount[0] and total_bank_payment_request_amount[0].get('grand_total'):
-		if flt(total_bank_payment_request_amount[0].get('grand_total')) >= flt(args.get('grand_total')):
+	total_amount = sum(flt(r.grand_total) for r in bank_payment_requests)
+
+	if total_amount:
+		if total_amount >= flt(args.get('grand_total')):
 			return 'Completed'
-
 	return ""
 
 def get_employee_payemnt_details(journal_accounts):
