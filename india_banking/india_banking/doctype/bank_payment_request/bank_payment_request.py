@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 
 from erpnext.accounts.doctype.payment_request.payment_request import PaymentRequest, get_existing_payment_request_amount
-from erpnext.accounts.doctype.tax_withholding_category.tax_withholding_category import get_party_tax_withholding_details
+from erpnext.accounts.doctype.tax_withholding_category.tax_withholding_category import TaxWithholdingDetails
 
 
 from erpnext.accounts.doctype.payment_request import payment_request as PR
@@ -119,17 +119,21 @@ class BankPaymentRequest(PaymentRequest):
 		return payment_entry
 
 	def calculate_pr_tds(self, amount):
-		doc = self
-		doc.supplier = self.party
-		doc.company = self.company
-		doc.base_tax_withholding_net_total = amount
-		doc.tax_withholding_net_total = amount
-		doc.taxes = []
-		taxes = get_party_tax_withholding_details(doc, self.tax_withholding_category)
-		if taxes:
-			return taxes["tax_amount"]
-		else:
-			return 0
+		try:
+			details = TaxWithholdingDetails(
+				tax_withholding_categories=[self.tax_withholding_category],
+				tax_withholding_group=None,
+				posting_date=today(),
+				party_type="Supplier",
+				party=self.party,
+				company=self.company,
+			).get()
+			if details and self.tax_withholding_category in details:
+				tax_rate = details[self.tax_withholding_category].get("tax_rate", 0)
+				return flt(amount * tax_rate / 100)
+		except Exception:
+			pass
+		return 0
 
 	def valdidate_bank_for_wire_transfer(self):
 		if self.mode_of_payment == "Wire Transfer" and not self.bank_account:
